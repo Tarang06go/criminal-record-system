@@ -1,20 +1,18 @@
-"use client"
-
-import Link from "next/link"
+import { Link } from "react-router-dom";
 
 export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-100">
-      
+
       {/* HEADER */}
       <header className="bg-white border-b px-6 h-16 flex items-center justify-between">
         <h1 className="font-semibold text-lg">CRMS Dashboard</h1>
 
-        <nav className="flex gap-4 text-sm">
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/criminals">Criminals</Link>
-          <Link href="/cases">Cases</Link>
-          <Link href="/officers">Officers</Link>
+        <nav className="flex gap-6 text-sm font-medium">
+          <Link to="/dashboard">Dashboard</Link>
+          <Link to="/criminals">Criminals</Link>
+          <Link to="/cases">Cases</Link>
+          <Link to="/officers">Officers</Link>
         </nav>
       </header>
 
@@ -22,7 +20,7 @@ export default function DashboardPage() {
       <div className="p-6 space-y-6">
 
         {/* STATS */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {["Cases", "Officers", "Criminals", "Active"].map((item) => (
             <div key={item} className="card p-5">
               <p className="text-sm text-slate-500">{item}</p>
@@ -56,5 +54,5 @@ export default function DashboardPage() {
 
       </div>
     </div>
-  )
+  );
 }
