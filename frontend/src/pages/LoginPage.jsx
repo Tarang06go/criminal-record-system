@@ -1,56 +1,170 @@
-"use client"
+// src/pages/LoginPage.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { useState } from "react"
+import api, { getApiErrorMessage } from "../services/api";
+import { setAuthSession } from "../services/auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const [formData, setFormData] = useState({
+    username: "",
+    password: ""
+  });
 
-    if (email === "admin@police.gov" && password === "admin123") {
-      window.location.href = "/dashboard"
-    } else {
-      alert("Invalid credentials")
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const response = await api.post("/auth/login", formData);
+
+      setAuthSession(response.data.token, response.data.user);
+
+      setTimeout(() => {
+        navigate("/cases", { replace: true });
+      }, 50);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Invalid credentials or server error."));
+    } finally {
+      setSubmitting(false);
     }
   }
 
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-slate-100">
-      <div className="w-full max-w-md card p-8">
-        <h1 className="text-3xl font-semibold mb-2">
-          Criminal Records System
-        </h1>
-        <p className="text-sm text-slate-500 mb-6">
-          Secure login for authorized personnel
-        </p>
+    <div className="login-root">
+      <div className="login-grid">
+        <aside className="auth-sidebar">
+          <div className="sidebar-top">
+            <div className="sidebar-badge">
+              <span className="badge-dot" />
+              SYSTEM ACTIVE
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="input"
-            placeholder="admin@police.gov"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+            <p className="sidebar-dept">State Police Department</p>
 
-          <input
-            className="input"
-            type="password"
-            placeholder="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+            <h1 className="sidebar-heading">
+              Criminal
+              <br />
+              Record
+              <br />
+              Management
+            </h1>
 
-          <button className="btn btn-primary w-full">
-            Sign In
-          </button>
-        </form>
+            <p className="sidebar-sub">
+              Unified case intelligence and officer management platform.
+              Restricted access for authorised personnel only.
+            </p>
+          </div>
 
-        <p className="text-xs text-slate-500 mt-6 text-center">
-          Demo: admin@police.gov / admin123
-        </p>
+          <div className="sidebar-stats">
+            {[
+              { label: "Active Cases", value: "1,204" },
+              { label: "Officers", value: "348" },
+              { label: "Divisions", value: "12" }
+            ].map((s) => (
+              <div key={s.label} className="stat-card">
+                <span className="stat-value">{s.value}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="sidebar-footer">
+            {["JWT Auth", "Node.js", "MySQL", "Render"].map((t) => (
+              <span key={t} className="footer-tag">
+                {t}
+              </span>
+            ))}
+          </div>
+        </aside>
+
+        <main className="auth-form-wrapper">
+          <div className="auth-form-card">
+            <p className="auth-mobile-dept lg:hidden">State Police Dept.</p>
+
+            <header className="auth-header">
+              <h2 className="auth-title">Sign in</h2>
+              <p className="auth-hint">
+                Enter your department credentials to access the system.
+              </p>
+            </header>
+
+            <form className="auth-form" onSubmit={handleSubmit} noValidate>
+              <div className="field-group">
+                <label className="field-label" htmlFor="username">
+                  Email address
+                </label>
+                <input
+                  id="username"
+                  type="email"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="field-input"
+                  placeholder="officer@police.gov"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              <div className="field-group">
+                <label className="field-label" htmlFor="password">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="field-input"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="auth-error" role="alert">
+                  <span className="error-icon" aria-hidden="true">
+                    !
+                  </span>
+                  {error}
+                </div>
+              )}
+
+              <button type="submit" disabled={submitting} className="auth-btn">
+                {submitting ? (
+                  <span className="btn-inner">
+                    <span className="spinner" aria-hidden="true" />
+                    Authenticating…
+                  </span>
+                ) : (
+                  "Access System"
+                )}
+              </button>
+            </form>
+
+            <div className="auth-demo">
+              <span className="demo-label">Demo credentials</span>
+              <code className="demo-creds">
+                admin@system.com&nbsp;&nbsp;/&nbsp;&nbsp;admin123
+              </code>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
-  )
+  );
 }

@@ -1,20 +1,32 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Dashboard from "./pages/DashboardPage";
-import Officers from "./pages/OfficersPage";
-import Criminals from "./pages/CriminalsPage";
-import Cases from "./pages/CasesPage";
+import { Navigate, Route, Routes } from "react-router-dom";
 
-function App() {
+import AppLayout from "./components/AppLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import CasesPage from "./pages/CasesPage";
+import CriminalsPage from "./pages/CriminalsPage";
+import DashboardPage from "./pages/DashboardPage";
+import LoginPage from "./pages/LoginPage";
+import OfficersPage from "./pages/OfficersPage";
+
+export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/officers" element={<Officers />} />
-        <Route path="/criminals" element={<Criminals />} />
-        <Route path="/cases" element={<Cases />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      {/* PUBLIC */}
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* PROTECTED */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/cases" element={<CasesPage />} />
+          <Route path="/officers" element={<OfficersPage />} />
+          <Route path="/criminals" element={<CriminalsPage />} />
+        </Route>
+      </Route>
+
+      {/* FALLBACK */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
-
-export default App;
