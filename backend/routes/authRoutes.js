@@ -4,10 +4,8 @@ const { body, validationResult } = require("express-validator");
 
 const { pool } = require("../db");
 const { authenticateToken } = require("../middleware/authMiddleware");
-const { verifyPassword } = require("../utils/password");
 
 const router = express.Router();
-
 
 // 🔹 Helper: Get officer profile
 async function getOfficerProfileByEmail(email) {
@@ -29,8 +27,7 @@ async function getOfficerProfileByEmail(email) {
   return rows[0] || null;
 }
 
-
-// 🔐 LOGIN ROUTE
+// 🔐 LOGIN ROUTE (NO HASHING)
 router.post(
   "/login",
   [
@@ -71,10 +68,8 @@ router.post(
 
       const user = rows[0];
 
-      // 🔐 Verify password
-      const passwordMatches = verifyPassword(password, user.password_hash);
-
-      if (!passwordMatches) {
+      // ✅ SIMPLE PASSWORD CHECK (NO HASHING)
+      if (password !== user.password_hash) {
         return res.status(401).json({
           success: false,
           message: "Invalid username or password"
@@ -87,7 +82,7 @@ router.post(
           ? await getOfficerProfileByEmail(user.username)
           : null;
 
-      // 🔑 JWT SECRET fallback protection
+      // 🔑 JWT SECRET
       const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
       // 🔑 Generate token
@@ -125,7 +120,6 @@ router.post(
   }
 );
 
-
 // 🔐 GET CURRENT USER
 router.get("/me", authenticateToken, async (req, res) => {
   try {
@@ -153,6 +147,5 @@ router.get("/me", authenticateToken, async (req, res) => {
     });
   }
 });
-
 
 module.exports = router;
