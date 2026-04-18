@@ -2,7 +2,7 @@ import axios from "axios";
 import { clearAuthSession, getToken } from "./auth";
 
 const api = axios.create({
-  baseURL: "https://criminal-record-system-tybr.onrender.com/api",
+baseURL: "https://criminal-record-system-tybr.onrender.com/api",
   timeout: 15000,
 });
 
