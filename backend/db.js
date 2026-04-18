@@ -1,5 +1,3 @@
- · JS
-Copy
 
 const mysql = require("mysql2/promise");
  
