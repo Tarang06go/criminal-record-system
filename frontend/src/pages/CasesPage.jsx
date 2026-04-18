@@ -1,15 +1,14 @@
+// src/pages/CasesPage.jsx
 import { useEffect, useState } from "react";
 import DataTable from "../components/DataTable";
 import api, { getApiErrorMessage } from "../services/api";
 
-// ── Verdict pill class ────────────────────────────────────
 function verdictClass(verdict) {
-  if (verdict === "Guilty")                               return "verdict-guilty";
+  if (verdict === "Guilty") return "verdict-guilty";
   if (verdict === "Pending" || verdict === "Under Trial") return "verdict-pending";
   return "verdict-default";
 }
 
-// ── Search icon (inline SVG — no extra dep) ───────────────
 function SearchIcon() {
   return (
     <svg
@@ -20,27 +19,33 @@ function SearchIcon() {
       aria-hidden="true"
     >
       <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M10 10l3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path
+        d="M10 10l3.5 3.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
-// ── Component ─────────────────────────────────────────────
 export default function CasesPage() {
-  const user    = JSON.parse(localStorage.getItem("user") || "null");
+  const user = JSON.parse(localStorage.getItem("user") || "null");
   const isAdmin = user?.role === "admin";
 
-  const [cases,    setCases]    = useState([]);
+  const [cases, setCases] = useState([]);
   const [officers, setOfficers] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState("");
-  const [search,   setSearch]   = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
   const [form, setForm] = useState({
-    court_name: "", lawyer_assigned: "", verdict: "", criminal_id: "",
+    court_name: "",
+    lawyer_assigned: "",
+    verdict: "",
+    criminal_id: ""
   });
 
-  // ── Loaders ──────────────────────────────────────────────
   async function loadCases() {
     try {
       const res = await api.get("/cases");
@@ -67,25 +72,27 @@ export default function CasesPage() {
     if (isAdmin) loadOfficers();
   }, []);
 
-  // ── Search filter ─────────────────────────────────────────
   const filteredCases = cases.filter((c) =>
-    (c.court_name    || "").toLowerCase().includes(search.toLowerCase()) ||
+    (c.court_name || "").toLowerCase().includes(search.toLowerCase()) ||
     (c.criminal_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  // ── Create case ───────────────────────────────────────────
   async function handleCreateCase(e) {
     e.preventDefault();
     try {
       const res = await api.post("/cases", form);
       setCases((prev) => [...prev, res.data.data]);
-      setForm({ court_name: "", lawyer_assigned: "", verdict: "", criminal_id: "" });
+      setForm({
+        court_name: "",
+        lawyer_assigned: "",
+        verdict: "",
+        criminal_id: ""
+      });
     } catch (err) {
       alert(getApiErrorMessage(err, "Failed to create case."));
     }
   }
 
-  // ── Delete case ───────────────────────────────────────────
   async function handleDelete(id) {
     if (!window.confirm("Permanently delete this case?")) return;
     try {
@@ -97,7 +104,6 @@ export default function CasesPage() {
     }
   }
 
-  // ── Update sentence ───────────────────────────────────────
   async function updateSentence(caseId) {
     const sentence = window.prompt("Enter sentence (e.g. 5 years imprisonment):");
     if (!sentence) return;
@@ -110,7 +116,6 @@ export default function CasesPage() {
     }
   }
 
-  // ── Assign officer ────────────────────────────────────────
   async function assignOfficer(caseId, officerId) {
     try {
       await api.put(`/cases/${caseId}/assign`, { officer_id: officerId });
@@ -121,30 +126,49 @@ export default function CasesPage() {
     }
   }
 
-  // ── Table column definitions ──────────────────────────────
   const columns = [
     {
       key: "case_id",
       label: "Case ID",
       render: (row) => (
-        <span style={{ fontFamily: "var(--mono)", fontSize: "0.75rem", fontWeight: 500, color: "var(--ink)" }}>
+        <span
+          style={{
+            fontFamily: "var(--mono)",
+            fontSize: "0.75rem",
+            fontWeight: 500,
+            color: "var(--ink)"
+          }}
+        >
           CASE-{row.case_id}
         </span>
-      ),
+      )
     },
     {
       key: "court_name",
       label: "Court / Lawyer",
       render: (row) => (
         <div>
-          <p style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.875rem" }}>
+          <p
+            style={{
+              fontWeight: 600,
+              color: "var(--ink)",
+              fontSize: "0.88rem",
+              lineHeight: 1.25
+            }}
+          >
             {row.court_name}
           </p>
-          <p style={{ fontSize: "0.73rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+          <p
+            style={{
+              fontSize: "0.74rem",
+              color: "var(--ink-faint)",
+              marginTop: "0.22rem"
+            }}
+          >
             {row.lawyer_assigned || "No lawyer assigned"}
           </p>
         </div>
-      ),
+      )
     },
     {
       key: "verdict",
@@ -153,39 +177,60 @@ export default function CasesPage() {
         <span className={`status-pill ${verdictClass(row.verdict)}`}>
           {row.verdict || "Unknown"}
         </span>
-      ),
+      )
     },
     {
       key: "sentence",
       label: "Sentence",
       render: (row) => (
-        <span style={{ fontFamily: "var(--mono)", fontSize: "0.75rem", color: row.sentence ? "var(--ink)" : "#8898aa" }}>
+        <span
+          style={{
+            fontFamily: "var(--mono)",
+            fontSize: "0.74rem",
+            color: row.sentence ? "var(--ink)" : "#8695a4"
+          }}
+        >
           {row.sentence || "—"}
         </span>
-      ),
+      )
     },
     {
       key: "criminal_name",
       label: "Criminal",
       render: (row) => (
         <div>
-          <p style={{ fontWeight: 500, color: "var(--ink)", fontSize: "0.875rem" }}>
+          <p
+            style={{
+              fontWeight: 500,
+              color: "var(--ink)",
+              fontSize: "0.88rem"
+            }}
+          >
             {row.criminal_name || "Unknown"}
           </p>
-          <p style={{ fontFamily: "var(--mono)", fontSize: "0.68rem", color: "#8898aa", marginTop: "0.18rem" }}>
+          <p
+            style={{
+              fontFamily: "var(--mono)",
+              fontSize: "0.68rem",
+              color: "#7f8f9f",
+              marginTop: "0.18rem"
+            }}
+          >
             ID: {row.criminal_id}
           </p>
         </div>
-      ),
+      )
     },
     {
       key: "assigned_officer",
       label: "Officer",
       render: (row) => (
-        <span className={`officer-badge${row.assigned_officer ? "" : " officer-badge--empty"}`}>
+        <span
+          className={`officer-badge${row.assigned_officer ? "" : " officer-badge--empty"}`}
+        >
           {row.assigned_officer || "Unassigned"}
         </span>
-      ),
+      )
     },
     {
       key: "actions",
@@ -193,7 +238,6 @@ export default function CasesPage() {
       render: (row) =>
         isAdmin ? (
           <div className="case-actions">
-            {/* Update sentence */}
             <button
               className="btn-ghost btn-sm"
               onClick={() => updateSentence(row.case_id)}
@@ -202,7 +246,6 @@ export default function CasesPage() {
               Sentence
             </button>
 
-            {/* Assign officer — custom-styled native select */}
             <select
               className="assign-select"
               value={row.officer_id || ""}
@@ -218,7 +261,6 @@ export default function CasesPage() {
               ))}
             </select>
 
-            {/* Delete */}
             <button
               className="btn-danger btn-sm"
               onClick={() => handleDelete(row.case_id)}
@@ -227,26 +269,54 @@ export default function CasesPage() {
               Delete
             </button>
           </div>
-        ) : null,
-    },
+        ) : null
+    }
   ];
 
-  // ── Render ────────────────────────────────────────────────
   return (
     <div className="space-y-5">
+      <section className="panel px-5 py-5 sm:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <span className="soft-label">Case Management</span>
+            <h1
+              style={{
+                marginTop: "0.35rem",
+                fontSize: "1.7rem",
+                fontWeight: 650,
+                lineHeight: 1.05,
+                letterSpacing: "-0.04em",
+                color: "var(--ink)"
+              }}
+            >
+              Case Registry
+            </h1>
+            <p
+              style={{
+                marginTop: "0.5rem",
+                maxWidth: "48rem",
+                fontSize: "0.86rem",
+                lineHeight: 1.65,
+                color: "var(--ink-faint)"
+              }}
+            >
+              Search, review, and maintain case records, sentencing details, and
+              officer assignments from a single workspace.
+            </p>
+          </div>
 
-      {/* ── Search ── */}
-      <div className="cases-search-wrap">
-        <SearchIcon />
-        <input
-          className="input cases-search-input"
-          placeholder="Search by court name or criminal…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+          <div className="cases-search-wrap">
+            <SearchIcon />
+            <input
+              className="input cases-search-input"
+              placeholder="Search by court name or criminal…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+      </section>
 
-      {/* ── Create case form — admin only ── */}
       {isAdmin && (
         <div className="panel cases-form-panel">
           <span className="cases-form-title">New Case Record</span>
@@ -264,7 +334,9 @@ export default function CasesPage() {
                 className="input"
                 placeholder="Lawyer assigned"
                 value={form.lawyer_assigned}
-                onChange={(e) => setForm({ ...form, lawyer_assigned: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, lawyer_assigned: e.target.value })
+                }
               />
               <input
                 className="input"
@@ -279,8 +351,11 @@ export default function CasesPage() {
                 onChange={(e) => setForm({ ...form, criminal_id: e.target.value })}
                 required
               />
-              {/* Button fills the 5th column on large screens */}
-              <button type="submit" className="btn-primary" style={{ whiteSpace: "nowrap" }}>
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ whiteSpace: "nowrap" }}
+              >
                 Add case
               </button>
             </div>
@@ -288,7 +363,6 @@ export default function CasesPage() {
         </div>
       )}
 
-      {/* ── Cases table ── */}
       <DataTable
         title="Case Records"
         description="Track legal status, case assignment, and sentencing details."
@@ -298,7 +372,6 @@ export default function CasesPage() {
         error={error}
         emptyMessage="No case records found."
       />
-
     </div>
   );
 }

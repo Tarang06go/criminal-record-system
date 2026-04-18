@@ -1,3 +1,4 @@
+// src/pages/LoginPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,7 +10,7 @@ export default function LoginPage() {
 
   const [formData, setFormData] = useState({
     username: "",
-    password: "",
+    password: ""
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -23,10 +24,8 @@ export default function LoginPage() {
     try {
       const response = await api.post("/auth/login", formData);
 
-      // ✅ Save session
       setAuthSession(response.data.token, response.data.user);
 
-      // ✅ Small delay avoids ProtectedRoute timing issue
       setTimeout(() => {
         navigate("/cases", { replace: true });
       }, 50);
@@ -45,36 +44,34 @@ export default function LoginPage() {
   return (
     <div className="login-root">
       <div className="login-grid">
-
-        {/* ── LEFT — Authority Sidebar ── */}
         <aside className="auth-sidebar">
           <div className="sidebar-top">
-            {/* Live status badge */}
             <div className="sidebar-badge">
               <span className="badge-dot" />
               SYSTEM ACTIVE
             </div>
 
-            {/* Department + heading */}
             <p className="sidebar-dept">State Police Department</p>
+
             <h1 className="sidebar-heading">
-              Criminal<br />
-              Record<br />
+              Criminal
+              <br />
+              Record
+              <br />
               Management
             </h1>
 
             <p className="sidebar-sub">
               Unified case intelligence and officer management platform.
-              Restricted access — authorised personnel only.
+              Restricted access for authorised personnel only.
             </p>
           </div>
 
-          {/* Stats — monospaced numbers feel like a real system readout */}
           <div className="sidebar-stats">
             {[
               { label: "Active Cases", value: "1,204" },
-              { label: "Officers",     value: "348"   },
-              { label: "Divisions",    value: "12"    },
+              { label: "Officers", value: "348" },
+              { label: "Divisions", value: "12" }
             ].map((s) => (
               <div key={s.label} className="stat-card">
                 <span className="stat-value">{s.value}</span>
@@ -83,22 +80,18 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {/* Stack tags */}
           <div className="sidebar-footer">
             {["JWT Auth", "Node.js", "MySQL", "Render"].map((t) => (
-              <span key={t} className="footer-tag">{t}</span>
+              <span key={t} className="footer-tag">
+                {t}
+              </span>
             ))}
           </div>
         </aside>
 
-        {/* ── RIGHT — Login Form ── */}
         <main className="auth-form-wrapper">
           <div className="auth-form-card">
-
-            {/* Visible only on mobile (sidebar is hidden) */}
-            <p className="auth-mobile-dept lg:hidden">
-              State Police Dept.
-            </p>
+            <p className="auth-mobile-dept lg:hidden">State Police Dept.</p>
 
             <header className="auth-header">
               <h2 className="auth-title">Sign in</h2>
@@ -108,7 +101,6 @@ export default function LoginPage() {
             </header>
 
             <form className="auth-form" onSubmit={handleSubmit} noValidate>
-              {/* Email field — label above, not just a placeholder */}
               <div className="field-group">
                 <label className="field-label" htmlFor="username">
                   Email address
@@ -126,7 +118,6 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Password field */}
               <div className="field-group">
                 <label className="field-label" htmlFor="password">
                   Password
@@ -144,20 +135,16 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Error — left-border style, not just red text */}
               {error && (
                 <div className="auth-error" role="alert">
-                  <span className="error-icon" aria-hidden="true">!</span>
+                  <span className="error-icon" aria-hidden="true">
+                    !
+                  </span>
                   {error}
                 </div>
               )}
 
-              {/* Submit — dark navy, not a flat orange block */}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="auth-btn"
-              >
+              <button type="submit" disabled={submitting} className="auth-btn">
                 {submitting ? (
                   <span className="btn-inner">
                     <span className="spinner" aria-hidden="true" />
@@ -169,17 +156,14 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Demo credentials — low prominence */}
             <div className="auth-demo">
               <span className="demo-label">Demo credentials</span>
               <code className="demo-creds">
                 admin@system.com&nbsp;&nbsp;/&nbsp;&nbsp;admin123
               </code>
             </div>
-
           </div>
         </main>
-
       </div>
     </div>
   );
