@@ -1,5 +1,8 @@
 const jwt = require("jsonwebtoken");
 
+// ⚠️ MUST match the secret used in authRoutes.js when signing tokens
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
@@ -12,11 +15,7 @@ function authenticateToken(req, res, next) {
   const token = authHeader.split(" ")[1];
 
   try {
-    req.user = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "change-this-secret-key"
-    );
-
+    req.user = jwt.verify(token, JWT_SECRET);
     return next();
   } catch (error) {
     return res.status(401).json({
@@ -28,9 +27,7 @@ function authenticateToken(req, res, next) {
 function authorizeRoles(...allowedRoles) {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        message: "Unauthorized."
-      });
+      return res.status(401).json({ message: "Unauthorized." });
     }
 
     if (!allowedRoles.includes(req.user.role)) {

@@ -1,21 +1,10 @@
 const express = require("express");
-const crypto = require("crypto");
 const { pool } = require("../db");
 const { authenticateToken } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// 🔐 HASH FUNCTION
-function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto
-    .pbkdf2Sync(password, salt, 100000, 64, "sha512")
-    .toString("hex");
-
-  return `100000:${salt}:${hash}`;
-}
-
-// 🔹 GET ALL OFFICERS
+// 🔹 GET ALL OFFICERS (admin + officer can view)
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -33,10 +22,9 @@ router.get("/", authenticateToken, async (req, res) => {
 });
 
 
-// 🔹 ADD OFFICER + CREATE LOGIN
+// 🔹 ADD OFFICER + CREATE LOGIN (admin only, plain text password)
 router.post("/", authenticateToken, async (req, res) => {
   try {
-    // 🔒 Only admin allowed
     if (req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
@@ -53,7 +41,7 @@ router.post("/", authenticateToken, async (req, res) => {
       });
     }
 
-    // ✅ Check duplicate email
+    // Check duplicate email
     const [existing] = await pool.query(
       "SELECT officer_id FROM police_officers WHERE email = ?",
       [email]
@@ -66,21 +54,20 @@ router.post("/", authenticateToken, async (req, res) => {
       });
     }
 
-    // insert officer
+    // Insert officer
     await pool.query(
       `INSERT INTO police_officers (name, officer_rank, phone, email, station)
        VALUES (?, ?, ?, ?, ?)`,
       [name, officer_rank, phone, email, station]
     );
 
-    // create login
+    // ✅ Store plain text password (NO HASHING)
     const defaultPassword = "default123";
-    const hashed = hashPassword(defaultPassword);
 
     await pool.query(
       `INSERT INTO login_users (username, password_hash, role)
        VALUES (?, ?, 'officer')`,
-      [email, hashed]
+      [email, defaultPassword]
     );
 
     res.json({
@@ -102,7 +89,7 @@ router.post("/", authenticateToken, async (req, res) => {
 });
 
 
-// 🔹 DELETE OFFICER
+// 🔹 DELETE OFFICER (admin only)
 router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== "admin") {
@@ -111,7 +98,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 
     const id = req.params.id;
 
-    // 🔥 UNASSIGN FIRST
+    // Unassign from cases first to avoid FK constraint errors
     await pool.query(
       "UPDATE cases SET officer_id = NULL WHERE officer_id = ?",
       [id]
@@ -123,7 +110,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Not found" });
+      return res.status(404).json({ message: "Officer not found" });
     }
 
     const email = rows[0].email;
@@ -138,10 +125,10 @@ router.delete("/:id", authenticateToken, async (req, res) => {
       [email]
     );
 
-    res.json({ success: true });
+    res.json({ success: true, message: "Officer deleted" });
 
   } catch (err) {
-    console.error(err);
+    console.error("DELETE OFFICER ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
