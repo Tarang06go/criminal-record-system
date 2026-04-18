@@ -9,7 +9,7 @@ export default function LoginPage() {
 
   const [formData, setFormData] = useState({
     username: "",
-    password: ""
+    password: "",
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -26,19 +26,12 @@ export default function LoginPage() {
       // ✅ Save session
       setAuthSession(response.data.token, response.data.user);
 
-      console.log("LOGIN SUCCESS:", response.data);
-
-      // ✅ Delay avoids ProtectedRoute timing issue
+      // ✅ Small delay avoids ProtectedRoute timing issue
       setTimeout(() => {
         navigate("/cases", { replace: true });
       }, 50);
-
     } catch (err) {
-      console.error("LOGIN ERROR:", err);
-
-      setError(
-        getApiErrorMessage(err, "Invalid credentials or server error.")
-      );
+      setError(getApiErrorMessage(err, "Invalid credentials or server error."));
     } finally {
       setSubmitting(false);
     }
@@ -46,89 +39,146 @@ export default function LoginPage() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-      <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="login-root">
+      <div className="login-grid">
 
-        {/* LEFT PANEL */}
-        <section className="hidden rounded-[2rem] bg-gradient-to-br from-[#173250] via-[#22476a] to-[#c66b4a] p-10 text-white shadow-2xl lg:flex lg:flex-col lg:justify-between">
-          <div>
-            <p className="text-slate-200 text-sm">Secure Monitoring Suite</p>
-            <h1 className="mt-4 text-5xl font-semibold">
-              Criminal Record
-              <br />
-              Management System
+        {/* ── LEFT — Authority Sidebar ── */}
+        <aside className="auth-sidebar">
+          <div className="sidebar-top">
+            {/* Live status badge */}
+            <div className="sidebar-badge">
+              <span className="badge-dot" />
+              SYSTEM ACTIVE
+            </div>
+
+            {/* Department + heading */}
+            <p className="sidebar-dept">State Police Department</p>
+            <h1 className="sidebar-heading">
+              Criminal<br />
+              Record<br />
+              Management
             </h1>
 
-            <p className="mt-6 text-slate-100">
-              Manage cases, officers and criminals securely with JWT-based authentication.
+            <p className="sidebar-sub">
+              Unified case intelligence and officer management platform.
+              Restricted access — authorised personnel only.
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          {/* Stats — monospaced numbers feel like a real system readout */}
+          <div className="sidebar-stats">
             {[
-              { label: "Auth", value: "JWT" },
-              { label: "Backend", value: "Node.js" },
-              { label: "DB", value: "MySQL" }
-            ].map((item) => (
-              <div key={item.label} className="bg-white/10 p-4 rounded-2xl">
-                <p className="text-xs">{item.label}</p>
-                <p className="font-semibold">{item.value}</p>
+              { label: "Active Cases", value: "1,204" },
+              { label: "Officers",     value: "348"   },
+              { label: "Divisions",    value: "12"    },
+            ].map((s) => (
+              <div key={s.label} className="stat-card">
+                <span className="stat-value">{s.value}</span>
+                <span className="stat-label">{s.label}</span>
               </div>
             ))}
           </div>
-        </section>
 
-        {/* RIGHT PANEL */}
-        <section className="panel mx-auto w-full max-w-xl px-6 py-8">
-          <h2 className="text-3xl font-semibold text-ink">Login</h2>
-
-          <div className="mt-3 text-sm text-slate-500">
-            Demo:
-            <br />
-            admin@system.com / admin123
+          {/* Stack tags */}
+          <div className="sidebar-footer">
+            {["JWT Auth", "Node.js", "MySQL", "Render"].map((t) => (
+              <span key={t} className="footer-tag">{t}</span>
+            ))}
           </div>
+        </aside>
 
-          <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-            <input
-              type="email"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              placeholder="Email"
-              className="w-full rounded-xl border px-4 py-3"
-              required
-            />
+        {/* ── RIGHT — Login Form ── */}
+        <main className="auth-form-wrapper">
+          <div className="auth-form-card">
 
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Password"
-              className="w-full rounded-xl border px-4 py-3"
-              required
-            />
+            {/* Visible only on mobile (sidebar is hidden) */}
+            <p className="auth-mobile-dept lg:hidden">
+              State Police Dept.
+            </p>
 
-            {error && (
-              <div className="text-red-600 text-sm">{error}</div>
-            )}
+            <header className="auth-header">
+              <h2 className="auth-title">Sign in</h2>
+              <p className="auth-hint">
+                Enter your department credentials to access the system.
+              </p>
+            </header>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-ember text-white py-3 rounded-xl"
-            >
-              {submitting ? "Logging in..." : "Login"}
-            </button>
-          </form>
-        </section>
+            <form className="auth-form" onSubmit={handleSubmit} noValidate>
+              {/* Email field — label above, not just a placeholder */}
+              <div className="field-group">
+                <label className="field-label" htmlFor="username">
+                  Email address
+                </label>
+                <input
+                  id="username"
+                  type="email"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="field-input"
+                  placeholder="officer@police.gov"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              {/* Password field */}
+              <div className="field-group">
+                <label className="field-label" htmlFor="password">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="field-input"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+
+              {/* Error — left-border style, not just red text */}
+              {error && (
+                <div className="auth-error" role="alert">
+                  <span className="error-icon" aria-hidden="true">!</span>
+                  {error}
+                </div>
+              )}
+
+              {/* Submit — dark navy, not a flat orange block */}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="auth-btn"
+              >
+                {submitting ? (
+                  <span className="btn-inner">
+                    <span className="spinner" aria-hidden="true" />
+                    Authenticating…
+                  </span>
+                ) : (
+                  "Access System"
+                )}
+              </button>
+            </form>
+
+            {/* Demo credentials — low prominence */}
+            <div className="auth-demo">
+              <span className="demo-label">Demo credentials</span>
+              <code className="demo-creds">
+                admin@system.com&nbsp;&nbsp;/&nbsp;&nbsp;admin123
+              </code>
+            </div>
+
+          </div>
+        </main>
 
       </div>
     </div>
