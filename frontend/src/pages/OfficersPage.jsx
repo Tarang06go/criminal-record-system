@@ -11,7 +11,7 @@ export default function OfficersPage() {
   const [search, setSearch] = useState("");
 
   // ✅ ROLE
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "null")
   const isAdmin = user?.role === "admin";
 
   // ✅ FORM (FIXED - only once)

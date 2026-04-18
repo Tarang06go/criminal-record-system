@@ -1,5 +1,5 @@
+// frontend/src/pages/DashboardPage.jsx
 import { useEffect, useState } from "react";
-
 import StatCard from "../components/StatCard";
 import api, { getApiErrorMessage } from "../services/api";
 
@@ -10,14 +10,13 @@ function getOpenCaseCount(cases) {
 }
 
 function getTopStations(officers) {
-  const grouped = officers.reduce((accumulator, officer) => {
-    const currentStation = officer.station || "Unknown Station";
-    accumulator[currentStation] = (accumulator[currentStation] || 0) + 1;
-    return accumulator;
+  const grouped = officers.reduce((acc, officer) => {
+    const station = officer.station || "Unknown Station";
+    acc[station] = (acc[station] || 0) + 1;
+    return acc;
   }, {});
-
   return Object.entries(grouped)
-    .sort((firstItem, secondItem) => secondItem[1] - firstItem[1])
+    .sort((a, b) => b[1] - a[1])
     .slice(0, 4);
 }
 
@@ -27,7 +26,7 @@ export default function DashboardPage() {
     error: "",
     cases: [],
     officers: [],
-    criminals: []
+    criminals: [],
   });
 
   useEffect(() => {
@@ -35,38 +34,39 @@ export default function DashboardPage() {
 
     async function loadDashboardData() {
       try {
-        const [casesResponse, officersResponse, criminalsResponse] =
-          await Promise.all([
-            api.get("/cases"),
-            api.get("/officers"),
-            api.get("/criminals")
-          ]);
+        const [casesRes, officersRes, criminalsRes] = await Promise.all([
+          api.get("/cases"),
+          api.get("/officers"),
+          api.get("/criminals"),
+        ]);
 
         if (!ignore) {
-          setState({
-            loading: false,
-            error: "",
-            cases: casesResponse.data.data || [],
-            officers: officersResponse.data.data || [],
-            criminals: criminalsResponse.data.data || []
-          });
+          // Backend wraps in { success, data: [...] } — handle both shapes
+          const cases = Array.isArray(casesRes.data)
+            ? casesRes.data
+            : casesRes.data?.data ?? [];
+          const officers = Array.isArray(officersRes.data)
+            ? officersRes.data
+            : officersRes.data?.data ?? [];
+          const criminals = Array.isArray(criminalsRes.data)
+            ? criminalsRes.data
+            : criminalsRes.data?.data ?? [];
+
+          setState({ loading: false, error: "", cases, officers, criminals });
         }
       } catch (error) {
         if (!ignore) {
-          setState((currentValue) => ({
-            ...currentValue,
+          setState((prev) => ({
+            ...prev,
             loading: false,
-            error: getApiErrorMessage(error, "Unable to load dashboard data.")
+            error: getApiErrorMessage(error, "Unable to load dashboard data."),
           }));
         }
       }
     }
 
     loadDashboardData();
-
-    return () => {
-      ignore = true;
-    };
+    return () => { ignore = true; };
   }, []);
 
   const topStations = getTopStations(state.officers);
@@ -84,12 +84,11 @@ export default function DashboardPage() {
             Review operational movement across the entire criminal record system
             with real-time data pulled from your secured backend.
           </p>
-
-          {state.error ? (
+          {state.error && (
             <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {state.error}
             </div>
-          ) : null}
+          )}
         </div>
 
         <div className="panel p-6">
@@ -138,7 +137,6 @@ export default function DashboardPage() {
               <h2 className="mt-2 text-2xl font-semibold text-ink">Case Highlights</h2>
             </div>
           </div>
-
           <div className="mt-6 space-y-4">
             {state.loading ? (
               <p className="text-sm text-slate-500">Loading cases...</p>
@@ -146,23 +144,17 @@ export default function DashboardPage() {
               <p className="text-sm text-slate-500">No cases available.</p>
             ) : (
               recentCases.map((item) => (
-                <div
-                  key={item.case_id}
-                  className="rounded-3xl border border-slate-200/80 bg-white/70 p-4"
-                >
+                <div key={item.case_id} className="rounded-3xl border border-slate-200/80 bg-white/70 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                         Case #{item.case_id}
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-ink">
-                        {item.court_name}
-                      </h3>
+                      <h3 className="mt-2 text-xl font-semibold text-ink">{item.court_name}</h3>
                       <p className="mt-1 text-sm text-slate-600">
                         Criminal: {item.criminal_name || "Unknown"}
                       </p>
                     </div>
-
                     <span className="status-pill bg-slate-100 text-slate-700">
                       {item.verdict || "Unknown"}
                     </span>
@@ -176,7 +168,6 @@ export default function DashboardPage() {
         <div className="panel p-6">
           <p className="soft-label">Station Spread</p>
           <h2 className="mt-2 text-2xl font-semibold text-ink">Officer Coverage</h2>
-
           <div className="mt-6 space-y-4">
             {state.loading ? (
               <p className="text-sm text-slate-500">Loading station data...</p>
@@ -193,10 +184,7 @@ export default function DashboardPage() {
                     <div
                       className="h-3 rounded-full bg-gradient-to-r from-[#1d3858] to-[#d96c47]"
                       style={{
-                        width: `${Math.max(
-                          18,
-                          (count / Math.max(state.officers.length, 1)) * 100
-                        )}%`
+                        width: `${Math.max(18, (count / Math.max(state.officers.length, 1)) * 100)}%`,
                       }}
                     />
                   </div>
@@ -209,4 +197,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

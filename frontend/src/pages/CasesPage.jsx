@@ -10,7 +10,7 @@ function verdictClass(verdict) {
 }
 
 export default function CasesPage() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "null")
 const isAdmin = user?.role === "admin";
   const [cases, setCases] = useState([]);
   const [officers, setOfficers] = useState([]);
