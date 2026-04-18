@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --ink: #10243c;
+    --muted: #5c6c7e;
+    --panel: rgba(255, 250, 244, 0.92);
+    --line: rgba(16, 36, 60, 0.08);
+    --ember: #d96c47;
+    --ocean: #1d3858;
+    --sage: #5f8676;
+    --gold: #c39143;
+  }
+
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(255, 244, 231, 0.95), transparent 35%),
+      radial-gradient(circle at top right, rgba(217, 108, 71, 0.13), transparent 28%),
+      linear-gradient(180deg, #f8f1e7 0%, #ede3d5 100%);
+    color: var(--ink);
+    font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: Cambria, Georgia, serif;
+    letter-spacing: -0.03em;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-3xl border border-white/60 shadow-panel backdrop-blur-xl;
+    background-color: var(--panel);
+  }
+
+  .soft-label {
+    @apply text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-slate-500;
+  }
+
+  .table-shell {
+    @apply panel overflow-hidden;
+  }
+
+  .table-head-cell {
+    @apply px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500;
+  }
+
+  .table-body-cell {
+    @apply px-6 py-4 align-top text-sm text-slate-700;
+  }
+
+  .status-pill {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: rgba(16, 36, 60, 0.22);
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
