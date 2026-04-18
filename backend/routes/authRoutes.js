@@ -9,22 +9,27 @@ const router = express.Router();
 
 // 🔹 Helper: Get officer profile
 async function getOfficerProfileByEmail(email) {
-  const [rows] = await pool.query(
-    `
-    SELECT
-      officer_id,
-      name,
-      officer_rank,
-      phone,
-      email,
-      station
-    FROM police_officers
-    WHERE email = ?
-    `,
-    [email]
-  );
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT
+        officer_id,
+        name,
+        officer_rank,
+        phone,
+        email,
+        station
+      FROM police_officers
+      WHERE email = ?
+      `,
+      [email]
+    );
 
-  return rows[0] || null;
+    return rows[0] || null;
+  } catch (err) {
+    console.error("OFFICER PROFILE ERROR:", err);
+    return null;
+  }
 }
 
 // 🔐 LOGIN ROUTE (NO HASHING)
@@ -36,7 +41,6 @@ router.post(
   ],
   async (req, res) => {
     try {
-
       // ✅ Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -59,7 +63,7 @@ router.post(
         [username]
       );
 
-      if (rows.length === 0) {
+      if (!rows || rows.length === 0) {
         return res.status(401).json({
           success: false,
           message: "Invalid username or password"
@@ -76,11 +80,11 @@ router.post(
         });
       }
 
-      // 👮 Officer profile
-      const officerProfile =
-        user.role === "officer"
-          ? await getOfficerProfileByEmail(user.username)
-          : null;
+      // 👮 Officer profile (safe)
+      let officerProfile = null;
+      if (user.role === "officer") {
+        officerProfile = await getOfficerProfileByEmail(user.username);
+      }
 
       // 🔑 JWT SECRET
       const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
@@ -123,11 +127,11 @@ router.post(
 // 🔐 GET CURRENT USER
 router.get("/me", authenticateToken, async (req, res) => {
   try {
+    let officerProfile = null;
 
-    const officerProfile =
-      req.user.role === "officer"
-        ? await getOfficerProfileByEmail(req.user.username)
-        : null;
+    if (req.user.role === "officer") {
+      officerProfile = await getOfficerProfileByEmail(req.user.username);
+    }
 
     return res.json({
       success: true,
