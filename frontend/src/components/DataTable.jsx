@@ -1,72 +1,119 @@
 export default function DataTable({
   title,
   description,
-  columns,
-  data,
+  columns = [],
+  data = [],
   loading,
   error,
-  emptyMessage
+  emptyMessage = "No records found.",
 }) {
   return (
     <section className="table-shell">
-      <div className="flex flex-col gap-3 border-b border-slate-200/80 px-6 py-5 sm:flex-row sm:items-end sm:justify-between">
+      {/* Header */}
+      <div className="flex flex-col gap-3 border-b px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
+        style={{ borderColor: "rgba(15,25,35,0.07)", background: "rgba(248,250,252,0.7)" }}>
         <div>
           <p className="soft-label">Live Records</p>
-          <h3 className="mt-2 text-2xl font-semibold text-ink">{title}</h3>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">{description}</p>
+          <h3 className="mt-1.5 text-xl font-semibold" style={{ color: "var(--ink)", letterSpacing: "-0.03em" }}>
+            {title}
+          </h3>
+          {description && (
+            <p className="mt-1 max-w-xl text-sm" style={{ color: "var(--ink-faint)", lineHeight: 1.55 }}>
+              {description}
+            </p>
+          )}
         </div>
 
-        <div className="rounded-2xl bg-slate-100/80 px-4 py-3 text-sm text-slate-600">
-          <span className="font-semibold text-ink">{data.length}</span> records
+        <div
+          style={{
+            fontFamily: "var(--mono)",
+            fontSize: "0.72rem",
+            color: "var(--muted)",
+            border: "1px solid rgba(15,25,35,0.09)",
+            background: "#fff",
+            padding: "0.4rem 0.8rem",
+            borderRadius: "0.45rem",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ fontWeight: 600, color: "var(--ink)" }}>{data.length}</span>{" "}
+          {data.length === 1 ? "record" : "records"}
         </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
-          <thead className="bg-slate-50/80">
+          <thead>
             <tr>
-              {columns.map((column) => (
-                <th key={column.key} className="table-head-cell">
-                  {column.label}
+              {columns.map((col) => (
+                <th key={col.key} className="table-head-cell">
+                  {col.label}
                 </th>
               ))}
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-200/70">
+          <tbody>
             {loading ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-12 text-center text-sm text-slate-500"
+                  className="table-body-cell"
+                  style={{ padding: "3.5rem 1.5rem", textAlign: "center", color: "var(--muted)" }}
                 >
-                  Loading records...
+                  <span style={{ fontFamily: "var(--mono)", fontSize: "0.78rem", letterSpacing: "0.08em" }}>
+                    Loading records…
+                  </span>
                 </td>
               </tr>
             ) : error ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-12 text-center text-sm font-medium text-rose-600"
+                  style={{ padding: "3rem 1.5rem", textAlign: "center" }}
                 >
-                  {error}
+                  <span
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: 500,
+                      color: "var(--danger-fg)",
+                      background: "var(--danger-bg)",
+                      border: "1px solid var(--danger-border)",
+                      padding: "0.55rem 1rem",
+                      borderRadius: "0.5rem",
+                      display: "inline-block",
+                    }}
+                  >
+                    {error}
+                  </span>
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-12 text-center text-sm text-slate-500"
+                  style={{ padding: "3.5rem 1.5rem", textAlign: "center" }}
                 >
-                  {emptyMessage}
+                  <p className="empty-state-title">{emptyMessage}</p>
+                  <p className="empty-state-sub">No data matches your current view.</p>
                 </td>
               </tr>
             ) : (
-              data.map((row, rowIndex) => (
-                <tr key={row.id ?? row.case_id ?? row.officer_id ?? row.criminal_id ?? rowIndex}>
-                  {columns.map((column) => (
-                    <td key={column.key} className="table-body-cell">
-                      {column.render ? column.render(row) : row[column.key] ?? "—"}
+              data.map((row, idx) => (
+                <tr
+                  key={
+                    row.case_id ??
+                    row.officer_id ??
+                    row.criminal_id ??
+                    row.id ??
+                    idx
+                  }
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className="table-body-cell">
+                      {col.render ? col.render(row) : (row[col.key] ?? "—")}
                     </td>
                   ))}
                 </tr>

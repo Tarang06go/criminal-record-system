@@ -4,22 +4,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: "#10243c",
-        parchment: "#fffaf4",
-        sand: "#efe2d0",
-        ember: "#d96c47",
-        ocean: "#1d3858",
-        sage: "#5f8676",
-        gold: "#c39143"
+        ink:     "var(--ink)",
+        ember:   "var(--ember)",
+        ocean:   "var(--ocean)",
+        sage:    "var(--sage)",
+        gold:    "var(--gold)",
       },
-      boxShadow: {
-        panel: "0 24px 70px -36px rgba(16, 36, 60, 0.45)"
+      fontFamily: {
+        sans:  ["DM Sans", "Segoe UI", "system-ui", "sans-serif"],
+        serif: ["Bricolage Grotesque", "Cambria", "Georgia", "serif"],
+        mono:  ["JetBrains Mono", "Fira Code", "monospace"],
       },
       borderRadius: {
-        "4xl": "2rem"
-      }
-    }
+        "4xl": "2rem",
+      },
+      boxShadow: {
+        panel: "0 8px 32px -16px rgba(15,25,35,0.18)",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
 

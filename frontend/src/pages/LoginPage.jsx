@@ -1,4 +1,3 @@
-// src/pages/LoginPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -8,13 +7,9 @@ import { setAuthSession } from "../services/auth";
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    username: "",
-    password: ""
-  });
-
+  const [formData,   setFormData]   = useState({ username: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error,      setError]      = useState("");
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -23,12 +18,8 @@ export default function LoginPage() {
 
     try {
       const response = await api.post("/auth/login", formData);
-
       setAuthSession(response.data.token, response.data.user);
-
-      setTimeout(() => {
-        navigate("/cases", { replace: true });
-      }, 50);
+      setTimeout(() => navigate("/cases", { replace: true }), 50);
     } catch (err) {
       setError(getApiErrorMessage(err, "Invalid credentials or server error."));
     } finally {
@@ -36,14 +27,16 @@ export default function LoginPage() {
     }
   }
 
-  function handleChange(event) {
-    const { name, value } = event.target;
+  function handleChange(e) {
+    const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
   return (
     <div className="login-root">
       <div className="login-grid">
+
+        {/* ── Dark info panel (desktop only) ── */}
         <aside className="auth-sidebar">
           <div className="sidebar-top">
             <div className="sidebar-badge">
@@ -54,10 +47,8 @@ export default function LoginPage() {
             <p className="sidebar-dept">State Police Department</p>
 
             <h1 className="sidebar-heading">
-              Criminal
-              <br />
-              Record
-              <br />
+              Criminal<br />
+              Record<br />
               Management
             </h1>
 
@@ -70,8 +61,8 @@ export default function LoginPage() {
           <div className="sidebar-stats">
             {[
               { label: "Active Cases", value: "1,204" },
-              { label: "Officers", value: "348" },
-              { label: "Divisions", value: "12" }
+              { label: "Officers",     value: "348"   },
+              { label: "Divisions",    value: "12"    },
             ].map((s) => (
               <div key={s.label} className="stat-card">
                 <span className="stat-value">{s.value}</span>
@@ -82,13 +73,12 @@ export default function LoginPage() {
 
           <div className="sidebar-footer">
             {["JWT Auth", "Node.js", "MySQL", "Render"].map((t) => (
-              <span key={t} className="footer-tag">
-                {t}
-              </span>
+              <span key={t} className="footer-tag">{t}</span>
             ))}
           </div>
         </aside>
 
+        {/* ── Login form ── */}
         <main className="auth-form-wrapper">
           <div className="auth-form-card">
             <p className="auth-mobile-dept lg:hidden">State Police Dept.</p>
@@ -137,9 +127,7 @@ export default function LoginPage() {
 
               {error && (
                 <div className="auth-error" role="alert">
-                  <span className="error-icon" aria-hidden="true">
-                    !
-                  </span>
+                  <span className="error-icon" aria-hidden="true">!</span>
                   {error}
                 </div>
               )}
@@ -164,6 +152,7 @@ export default function LoginPage() {
             </div>
           </div>
         </main>
+
       </div>
     </div>
   );
