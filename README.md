@@ -1,5 +1,5 @@
 # Criminal Record Management System
-
+Backend: Render | Frontend: Vercel | Database: Railway
 A full-stack web application for managing criminal records, cases, and police officers with role-based access.
 
 ## Overview
