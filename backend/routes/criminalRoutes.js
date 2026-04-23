@@ -113,11 +113,24 @@ router.get("/:id", authenticateToken, async (req, res) => {
 //////////////////////////////////////////////////////////
 // DELETE CRIMINAL (ADMIN ONLY)
 //
-// Strategy: disable FK checks → delete everything linked
-// to this criminal → re-enable FK checks.
-// This is the simplest and most reliable approach for a
-// demo project — no missing-table errors, no FK cascades
-// to think about.
+// YOUR SCHEMA FK MAP (from criminal_record_management.sql):
+//
+//   criminal_prison_assignments.criminal_id → criminals  RESTRICT  ← blocks criminal delete
+//   criminal_prison_assignments.case_id     → cases      CASCADE   ← auto-deletes when case deleted
+//   cases.criminal_id                       → criminals  RESTRICT  ← blocks criminal delete
+//   offences.criminal_id                    → criminals  RESTRICT  ← blocks criminal delete
+//   victims.offence_id                      → offences   CASCADE   ← auto-deletes when offence deleted
+//   witnesses.case_id                       → cases      CASCADE   ← auto-deletes when case deleted
+//   evidences.case_id                       → cases      CASCADE   ← auto-deletes when case deleted
+//   case_assignments.case_id                → cases      CASCADE   ← auto-deletes when case deleted
+//   sentence_log / case_audit_log           → NO FK      ← safe to delete anytime
+//
+// CORRECT DELETE ORDER:
+//   1. criminal_prison_assignments (by criminal_id) — RESTRICT on criminal, must go first
+//   2. sentence_log + case_audit_log (by case_id)  — no FK, safe anytime
+//   3. cases (by criminal_id)                       — CASCADE cleans witnesses/evidences/case_assignments
+//   4. offences (by criminal_id)                    — CASCADE cleans victims
+//   5. criminals                                    — now safe, nothing references it
 //////////////////////////////////////////////////////////
 
 router.delete("/:id", authenticateToken, async (req, res) => {
@@ -130,58 +143,58 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     return res.status(400).json({ success: false, message: "Valid criminal ID required" });
   }
 
-  // Check criminal exists first
-  const [existing] = await pool.query(
-    `SELECT criminal_id FROM criminals WHERE criminal_id = ?`, [criminalId]
-  );
-  if (existing.length === 0) {
-    return res.status(404).json({ success: false, message: "Criminal not found" });
-  }
-
   const conn = await pool.getConnection();
 
   try {
-    // Disable FK checks — bypasses ALL foreign key constraints
-    await conn.query(`SET FOREIGN_KEY_CHECKS = 0`);
+    await conn.beginTransaction();
 
-    // Get linked case IDs so we can delete their children too
+    // Confirm criminal exists
+    const [check] = await conn.query(
+      `SELECT criminal_id FROM criminals WHERE criminal_id = ?`, [criminalId]
+    );
+    if (check.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ success: false, message: "Criminal not found" });
+    }
+
+    // Get all case IDs for this criminal (needed for log cleanup)
     const [linkedCases] = await conn.query(
       `SELECT case_id FROM cases WHERE criminal_id = ?`, [criminalId]
     );
     const caseIds = linkedCases.map((r) => r.case_id);
 
-    if (caseIds.length > 0) {
-      await conn.query(`DELETE FROM witnesses              WHERE case_id IN (?)`, [caseIds]);
-      await conn.query(`DELETE FROM evidences              WHERE case_id IN (?)`, [caseIds]);
-      await conn.query(`DELETE FROM case_assignments       WHERE case_id IN (?)`, [caseIds]);
-      await conn.query(`DELETE FROM criminal_prison_assignments WHERE case_id IN (?)`, [caseIds]);
-
-      // Delete sentence_log only if the table exists
-      await conn.query(`DELETE FROM sentence_log     WHERE case_id IN (?)`, [caseIds]).catch(() => {});
-      await conn.query(`DELETE FROM case_audit_log   WHERE case_id IN (?)`, [caseIds]).catch(() => {});
-    }
-
-    // Delete cases
-    await conn.query(`DELETE FROM cases WHERE criminal_id = ?`, [criminalId]);
-
-    // Get linked offence IDs
-    const [linkedOffences] = await conn.query(
-      `SELECT offence_id FROM offences WHERE criminal_id = ?`, [criminalId]
+    // STEP 1 — criminal_prison_assignments
+    // Has RESTRICT on criminal_id → MUST be deleted before cases AND criminals
+    await conn.query(
+      `DELETE FROM criminal_prison_assignments WHERE criminal_id = ?`,
+      [criminalId]
     );
-    const offenceIds = linkedOffences.map((r) => r.offence_id);
 
-    if (offenceIds.length > 0) {
-      await conn.query(`DELETE FROM victims WHERE offence_id IN (?)`, [offenceIds]);
+    // STEP 2 — sentence_log and case_audit_log (no FK, cleanup only)
+    if (caseIds.length > 0) {
+      await conn.query(`DELETE FROM sentence_log   WHERE case_id IN (?)`, [caseIds]);
+      await conn.query(`DELETE FROM case_audit_log WHERE case_id IN (?)`, [caseIds]);
     }
 
-    await conn.query(`DELETE FROM offences WHERE criminal_id = ?`, [criminalId]);
-    await conn.query(`DELETE FROM criminal_prison_assignments WHERE criminal_id = ?`, [criminalId]);
+    // STEP 3 — cases
+    // ON DELETE CASCADE automatically removes:
+    //   witnesses, evidences, case_assignments (all have CASCADE on case_id)
+    await conn.query(
+      `DELETE FROM cases WHERE criminal_id = ?`, [criminalId]
+    );
 
-    // Delete the criminal
-    await conn.query(`DELETE FROM criminals WHERE criminal_id = ?`, [criminalId]);
+    // STEP 4 — offences
+    // ON DELETE CASCADE automatically removes victims (CASCADE on offence_id)
+    await conn.query(
+      `DELETE FROM offences WHERE criminal_id = ?`, [criminalId]
+    );
 
-    // Re-enable FK checks
-    await conn.query(`SET FOREIGN_KEY_CHECKS = 1`);
+    // STEP 5 — criminal (now nothing references it)
+    await conn.query(
+      `DELETE FROM criminals WHERE criminal_id = ?`, [criminalId]
+    );
+
+    await conn.commit();
 
     return res.json({
       success: true,
@@ -189,8 +202,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    // Always re-enable FK checks even if something failed
-    await conn.query(`SET FOREIGN_KEY_CHECKS = 1`).catch(() => {});
+    await conn.rollback();
     console.error("DELETE CRIMINAL ERROR:", error.message);
     return res.status(500).json({
       success: false,
