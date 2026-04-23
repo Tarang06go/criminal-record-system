@@ -3,52 +3,36 @@ export default function DataTable({
   description,
   columns = [],
   data = [],
-  loading,
-  error,
+  loading = false,
+  error = "",
   emptyMessage = "No records found.",
 }) {
   return (
-    <section className="table-shell">
+    <section className="table-section">
       {/* Header */}
-      <div className="flex flex-col gap-3 border-b px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
-        style={{ borderColor: "rgba(15,25,35,0.07)", background: "rgba(248,250,252,0.7)" }}>
+      <div className="table-head-row">
         <div>
-          <p className="soft-label">Live Records</p>
-          <h3 className="mt-1.5 text-xl font-semibold" style={{ color: "var(--ink)", letterSpacing: "-0.03em" }}>
-            {title}
-          </h3>
+          <p className="table-section-title">{title}</p>
           {description && (
-            <p className="mt-1 max-w-xl text-sm" style={{ color: "var(--ink-faint)", lineHeight: 1.55 }}>
-              {description}
-            </p>
+            <p className="table-section-sub">{description}</p>
           )}
         </div>
-
-        <div
-          style={{
-            fontFamily: "var(--mono)",
-            fontSize: "0.72rem",
-            color: "var(--muted)",
-            border: "1px solid rgba(15,25,35,0.09)",
-            background: "#fff",
-            padding: "0.4rem 0.8rem",
-            borderRadius: "0.45rem",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ fontWeight: 600, color: "var(--ink)" }}>{data.length}</span>{" "}
+        <span className="table-count-badge">
+          {loading ? "—" : data.length}{" "}
           {data.length === 1 ? "record" : "records"}
-        </div>
+        </span>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse">
+      <div className="table-wrap">
+        <table className="data-table">
           <thead>
             <tr>
               {columns.map((col) => (
-                <th key={col.key} className="table-head-cell">
+                <th
+                  key={col.key}
+                  style={{ textAlign: col.align ?? "left" }}
+                >
                   {col.label}
                 </th>
               ))}
@@ -58,46 +42,32 @@ export default function DataTable({
           <tbody>
             {loading ? (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  className="table-body-cell"
-                  style={{ padding: "3.5rem 1.5rem", textAlign: "center", color: "var(--muted)" }}
-                >
-                  <span style={{ fontFamily: "var(--mono)", fontSize: "0.78rem", letterSpacing: "0.08em" }}>
-                    Loading records…
-                  </span>
+                <td colSpan={columns.length}>
+                  <div className="table-empty">
+                    <p className="table-empty-title">Loading records…</p>
+                    <p className="table-empty-sub">
+                      Fetching data from the secure backend.
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  style={{ padding: "3rem 1.5rem", textAlign: "center" }}
-                >
-                  <span
-                    style={{
-                      fontSize: "0.82rem",
-                      fontWeight: 500,
-                      color: "var(--danger-fg)",
-                      background: "var(--danger-bg)",
-                      border: "1px solid var(--danger-border)",
-                      padding: "0.55rem 1rem",
-                      borderRadius: "0.5rem",
-                      display: "inline-block",
-                    }}
-                  >
-                    {error}
-                  </span>
+                <td colSpan={columns.length}>
+                  <div className="table-empty">
+                    <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--red)" }}>
+                      {error}
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td
-                  colSpan={columns.length}
-                  style={{ padding: "3.5rem 1.5rem", textAlign: "center" }}
-                >
-                  <p className="empty-state-title">{emptyMessage}</p>
-                  <p className="empty-state-sub">No data matches your current view.</p>
+                <td colSpan={columns.length}>
+                  <div className="table-empty">
+                    <p className="table-empty-title">{emptyMessage}</p>
+                    <p className="table-empty-sub">No matching records in the database.</p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -112,7 +82,10 @@ export default function DataTable({
                   }
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="table-body-cell">
+                    <td
+                      key={col.key}
+                      style={{ textAlign: col.align ?? "left" }}
+                    >
                       {col.render ? col.render(row) : (row[col.key] ?? "—")}
                     </td>
                   ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api, { getApiErrorMessage } from "../services/api";
 
+// ── Helpers ──────────────────────────────────────────────────
 function getOpenCaseCount(cases) {
   return cases.filter((c) =>
     ["Pending", "Under Trial"].includes(c.verdict)
@@ -19,18 +20,17 @@ function getTopStations(officers) {
 }
 
 function verdictPillClass(verdict) {
-  if (verdict === "Guilty")                                return "verdict-guilty";
-  if (verdict === "Pending" || verdict === "Under Trial")  return "verdict-pending";
-  return "verdict-default";
+  if (verdict === "Guilty")      return "pill pill-green";
+  if (verdict === "Pending")     return "pill pill-yellow";
+  if (verdict === "Under Trial") return "pill pill-orange";
+  return "pill pill-slate";
 }
 
+// ── Component ─────────────────────────────────────────────────
 export default function DashboardPage() {
   const [state, setState] = useState({
-    loading: true,
-    error: "",
-    cases: [],
-    officers: [],
-    criminals: [],
+    loading: true, error: "",
+    cases: [], officers: [], criminals: [],
   });
 
   useEffect(() => {
@@ -48,14 +48,12 @@ export default function DashboardPage() {
           const cases     = Array.isArray(casesRes.data)     ? casesRes.data     : casesRes.data?.data     ?? [];
           const officers  = Array.isArray(officersRes.data)  ? officersRes.data  : officersRes.data?.data  ?? [];
           const criminals = Array.isArray(criminalsRes.data) ? criminalsRes.data : criminalsRes.data?.data ?? [];
-
           setState({ loading: false, error: "", cases, officers, criminals });
         }
       } catch (err) {
         if (!ignore)
           setState((p) => ({
-            ...p,
-            loading: false,
+            ...p, loading: false,
             error: getApiErrorMessage(err, "Unable to load dashboard data."),
           }));
       }
@@ -75,188 +73,242 @@ export default function DashboardPage() {
     {
       label:  "Total Cases",
       value:  loading ? "—" : cases.length,
-      detail: "All case files visible to the authenticated session.",
-      accent: "stat-item--ember",
+      detail: "All case files visible to the current session.",
+      barColor: "var(--blue)",
     },
     {
       label:  "Open Cases",
       value:  loading ? "—" : openCases,
-      detail: "Pending or Under Trial — require active attention.",
-      accent: "stat-item--gold",
+      detail: "Pending or Under Trial — require attention.",
+      barColor: "var(--orange)",
     },
     {
       label:  "Officers",
       value:  loading ? "—" : officers.length,
-      detail: "Active officer records returned by the protected API.",
-      accent: "stat-item--ocean",
+      detail: "Active officers returned by the protected API.",
+      barColor: "var(--green)",
     },
     {
       label:  "Criminals",
       value:  loading ? "—" : criminals.length,
       detail: "Criminal profiles with linked offences and cases.",
-      accent: "stat-item--sage",
+      barColor: "var(--red)",
     },
   ];
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
-      {/* Row 1 — Hero + Pulse */}
-      <section className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+      {/* ── Row 1: Hero + Pulse ── */}
+      <section style={{ display: "grid", gap: "1rem", gridTemplateColumns: "1fr" }}>
+        <style>{`
+          @media (min-width: 900px) {
+            .dash-row1 { grid-template-columns: 2fr 1fr !important; }
+          }
+        `}</style>
+        <div className="dash-row1" style={{
+          display: "grid", gap: "1rem", gridTemplateColumns: "1fr",
+        }}>
 
-        {/* Hero */}
-        <div className="dash-hero">
-          <span className="dash-hero-label">System Snapshot</span>
-          <div>
-            <h1 className="dash-hero-title">
-              Centralized visibility for cases,<br />
-              officers, and criminal records.
-            </h1>
-            <p className="dash-hero-sub">
-              Real-time operational data pulled from your secured backend.
-              All figures reflect the current authenticated session.
-            </p>
-            {error && <div className="dash-hero-error">{error}</div>}
+          {/* Hero */}
+          <div className="hero-banner">
+            <div>
+              <p className="hero-kicker">System Snapshot</p>
+              <h1 className="hero-title">
+                Centralized visibility for cases,
+                officers, and criminal records.
+              </h1>
+              <p className="hero-sub">
+                Real-time operational data from the secured backend.
+                All figures reflect the current authenticated session.
+              </p>
+              {error && <div className="hero-error">{error}</div>}
+            </div>
           </div>
+
+          {/* Pulse */}
+          <div className="pulse-card">
+            <div>
+              <p className="pulse-mini-label" style={{ marginBottom: "0.5rem" }}>
+                Open Cases
+              </p>
+              <div className="pulse-number">
+                {loading ? "—" : openCases}
+              </div>
+              <p className="pulse-desc">
+                {loading
+                  ? "Loading metrics…"
+                  : "cases need active courtroom attention."}
+              </p>
+            </div>
+            <div className="pulse-footer">
+              {[
+                { label: "Total",    val: cases.length     },
+                { label: "Officers", val: officers.length  },
+                { label: "Criminal", val: criminals.length },
+              ].map(({ label, val }) => (
+                <div key={label}>
+                  <span className="pulse-mini-label">{label}</span>
+                  <span className="pulse-mini-val">
+                    {loading ? "—" : val}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
-
-        {/* Pulse */}
-        <div className="panel dash-pulse">
-          <span className="soft-label">Operations Pulse</span>
-          <div>
-            <div className="dash-pulse-number">
-              {loading ? "—" : openCases}
-            </div>
-            <p className="dash-pulse-desc">
-              {loading ? "Loading metrics…" : "cases need courtroom attention."}
-            </p>
-          </div>
-          <div className="flex gap-5" style={{ paddingTop: "1rem", borderTop: "1px solid rgba(15,25,35,0.07)", marginTop: "auto" }}>
-            <div>
-              <span className="soft-label" style={{ display: "block", marginBottom: "0.2rem" }}>Total</span>
-              <span style={{ fontFamily: "var(--mono)", fontSize: "0.88rem", fontWeight: 500, color: "var(--ink)" }}>
-                {loading ? "—" : cases.length}
-              </span>
-            </div>
-            <div>
-              <span className="soft-label" style={{ display: "block", marginBottom: "0.2rem" }}>Officers</span>
-              <span style={{ fontFamily: "var(--mono)", fontSize: "0.88rem", fontWeight: 500, color: "var(--ink)" }}>
-                {loading ? "—" : officers.length}
-              </span>
-            </div>
-            <div>
-              <span className="soft-label" style={{ display: "block", marginBottom: "0.2rem" }}>Criminals</span>
-              <span style={{ fontFamily: "var(--mono)", fontSize: "0.88rem", fontWeight: 500, color: "var(--ink)" }}>
-                {loading ? "—" : criminals.length}
-              </span>
-            </div>
-          </div>
-        </div>
-
       </section>
 
-      {/* Row 2 — Stat items */}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* ── Row 2: Stat cards ── */}
+      <section style={{
+        display: "grid", gap: "0.85rem",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+      }}>
         {stats.map((s) => (
-          <div key={s.label} className={`panel stat-item ${s.accent}`}>
-            <span className="stat-item-label">{s.label}</span>
-            <span className="stat-item-value">{s.value}</span>
-            <span className="stat-item-detail">{s.detail}</span>
+          <div key={s.label} className="stat-card">
+            <div
+              className="stat-card-bar"
+              style={{ background: s.barColor }}
+            />
+            <p className="stat-card-label">{s.label}</p>
+            <p className="stat-card-value">{s.value}</p>
+            <p className="stat-card-detail">{s.detail}</p>
           </div>
         ))}
       </section>
 
-      {/* Row 3 — Recent Cases + Officer Coverage */}
-      <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+      {/* ── Row 3: Cases + Coverage ── */}
+      <section style={{
+        display: "grid", gap: "1rem",
+        gridTemplateColumns: "1fr",
+      }}>
+        <style>{`
+          @media (min-width: 900px) {
+            .dash-row3 { grid-template-columns: 1.3fr 0.7fr !important; }
+          }
+        `}</style>
+        <div className="dash-row3" style={{
+          display: "grid", gap: "1rem", gridTemplateColumns: "1fr",
+        }}>
 
-        {/* Recent Cases */}
-        <div className="panel p-5">
-          <div className="flex items-center justify-between" style={{ marginBottom: "1.25rem" }}>
-            <div>
-              <span className="soft-label">Recent Case View</span>
-              <h2 style={{ marginTop: "0.3rem", fontSize: "1.15rem", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--ink)" }}>
-                Case Highlights
-              </h2>
-            </div>
-            <span style={{
-              fontFamily: "var(--mono)", fontSize: "0.65rem",
-              letterSpacing: "0.12em", color: "var(--muted)",
-              border: "1px solid rgba(15,25,35,0.09)",
-              background: "#fff",
-              padding: "0.2rem 0.55rem", borderRadius: "0.4rem",
+          {/* Recent cases */}
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-lg)",
+            padding: "1.25rem",
+          }}>
+            <div style={{
+              display: "flex", alignItems: "center",
+              justifyContent: "space-between", marginBottom: "1rem",
             }}>
-              {loading ? "—" : `${recentCases.length} of ${cases.length}`}
-            </span>
-          </div>
+              <div>
+                <p className="panel-eyebrow">Recent Case View</p>
+                <h2 className="panel-title">Case Highlights</h2>
+              </div>
+              <span style={{
+                fontFamily: "var(--font-mono)", fontSize: "0.62rem",
+                color: "var(--text-muted)",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid var(--border)",
+                padding: "0.2rem 0.55rem",
+                borderRadius: "var(--r-sm)",
+              }}>
+                {loading ? "—" : `${recentCases.length} of ${cases.length}`}
+              </span>
+            </div>
 
-          {loading ? (
-            <p style={{ fontSize: "0.83rem", color: "var(--muted)", fontFamily: "var(--mono)" }}>Loading cases…</p>
-          ) : recentCases.length === 0 ? (
-            <p style={{ fontSize: "0.83rem", color: "var(--muted)" }}>No cases available.</p>
-          ) : (
-            <ul className="dash-case-list">
-              {recentCases.map((item) => (
-                <li key={item.case_id} className="dash-case-item">
+            {loading ? (
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading…</p>
+            ) : recentCases.length === 0 ? (
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>No cases available.</p>
+            ) : (
+              recentCases.map((item) => (
+                <div key={item.case_id} className="case-row">
                   <div>
-                    <p className="dash-case-id">Case #{item.case_id}</p>
-                    <p className="dash-case-court">{item.court_name}</p>
-                    <p className="dash-case-criminal">
+                    <p className="case-row-id">Case #{item.case_id}</p>
+                    <p className="case-row-court">{item.court_name}</p>
+                    <p className="case-row-criminal">
                       {item.criminal_name || "Unknown criminal"}
                     </p>
                   </div>
-                  <span className={`status-pill ${verdictPillClass(item.verdict)}`}>
+                  <span className={verdictPillClass(item.verdict)}>
                     {item.verdict || "Unknown"}
                   </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Officer Coverage */}
-        <div className="panel p-5">
-          <span className="soft-label">Station Spread</span>
-          <h2 style={{ marginTop: "0.3rem", marginBottom: "1.25rem", fontSize: "1.15rem", fontWeight: 600, letterSpacing: "-0.03em", color: "var(--ink)" }}>
-            Officer Coverage
-          </h2>
-
-          {loading ? (
-            <p style={{ fontSize: "0.83rem", color: "var(--muted)", fontFamily: "var(--mono)" }}>Loading station data…</p>
-          ) : topStations.length === 0 ? (
-            <p style={{ fontSize: "0.83rem", color: "var(--muted)" }}>No officer data available.</p>
-          ) : (
-            <div className="space-y-4">
-              {topStations.map(([station, count]) => (
-                <div key={station}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
-                    <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--ink)" }}>
-                      {station}
-                    </span>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: "0.7rem", color: "var(--muted)" }}>
-                      {count}
-                    </span>
-                  </div>
-                  <div className="station-bar-track">
-                    <div
-                      className="station-bar-fill"
-                      style={{ width: `${Math.max(8, (count / maxOfficers) * 100)}%` }}
-                    />
-                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
 
-          {!loading && officers.length > 0 && (
-            <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid rgba(15,25,35,0.07)" }}>
-              <span className="soft-label">Total deployed</span>
-              <p style={{ fontFamily: "var(--mono)", fontSize: "1.25rem", fontWeight: 500, color: "var(--ink)", marginTop: "0.3rem" }}>
-                {officers.length}
-              </p>
-            </div>
-          )}
+          {/* Officer coverage */}
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-lg)",
+            padding: "1.25rem",
+          }}>
+            <p className="panel-eyebrow">Station Spread</p>
+            <h2 className="panel-title" style={{ marginBottom: "1rem" }}>
+              Officer Coverage
+            </h2>
+
+            {loading ? (
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading…</p>
+            ) : topStations.length === 0 ? (
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>No data.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+                {topStations.map(([station, count]) => (
+                  <div key={station}>
+                    <div style={{
+                      display: "flex", alignItems: "center",
+                      justifyContent: "space-between", gap: "0.5rem",
+                    }}>
+                      <span style={{
+                        fontSize: "0.82rem", fontWeight: 500,
+                        color: "var(--text-primary)",
+                      }}>
+                        {station}
+                      </span>
+                      <span style={{
+                        fontFamily: "var(--font-mono)", fontSize: "0.68rem",
+                        color: "var(--text-muted)",
+                      }}>
+                        {count}
+                      </span>
+                    </div>
+                    <div className="station-bar-track">
+                      <div
+                        className="station-bar-fill"
+                        style={{
+                          width: `${Math.max(8, (count / maxOfficers) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loading && officers.length > 0 && (
+              <div style={{
+                marginTop: "1.25rem", paddingTop: "0.85rem",
+                borderTop: "1px solid var(--border)",
+              }}>
+                <p className="panel-eyebrow">Total deployed</p>
+                <p style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1.3rem", fontWeight: 700,
+                  color: "var(--text-primary)", letterSpacing: "-0.02em",
+                }}>
+                  {officers.length}
+                </p>
+              </div>
+            )}
+          </div>
+
         </div>
-
       </section>
 
     </div>

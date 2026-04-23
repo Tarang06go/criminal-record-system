@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import DataTable from "../components/DataTable";
 import api, { getApiErrorMessage } from "../services/api";
 
+function SearchIcon() {
+  return (
+    <svg className="search-icon" viewBox="0 0 16 16" fill="none"
+      stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <circle cx="6.5" cy="6.5" r="4.5" />
+      <path d="M10.5 10.5l3 3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function CriminalsPage() {
   const [criminals, setCriminals] = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -34,7 +44,7 @@ export default function CriminalsPage() {
     (c.address || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  function field(key) {
+  function setField(key) {
     return (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
@@ -59,56 +69,45 @@ export default function CriminalsPage() {
     }
   }
 
+  function genderPill(gender) {
+    if (gender === "Male")   return "pill pill-blue";
+    if (gender === "Female") return "pill pill-orange";
+    return "pill pill-slate";
+  }
+
   const columns = [
     {
       key: "criminal_id",
       label: "ID",
-      render: (row) => (
-        <span style={{
-          fontFamily: "var(--mono)", fontSize: "0.72rem", fontWeight: 500,
-          color: "var(--ink)", background: "rgba(15,25,35,0.05)",
-          border: "1px solid rgba(15,25,35,0.09)",
-          padding: "0.18rem 0.5rem", borderRadius: "0.35rem",
-        }}>
-          #{row.criminal_id}
-        </span>
-      ),
+      align: "center",
+      render: (row) => <span className="cell-id">#{row.criminal_id}</span>,
     },
     {
       key: "name",
       label: "Name",
-      render: (row) => (
-        <span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.875rem" }}>
-          {row.name}
-        </span>
-      ),
+      align: "left",
+      render: (row) => <span className="cell-primary">{row.name}</span>,
     },
     {
-      key: "age",
-      label: "Age / DOB",
+      key: "dob",
+      label: "Date of Birth",
+      align: "center",
       render: (row) => (
-        <div>
-          <p style={{ fontFamily: "var(--mono)", fontSize: "0.85rem", fontWeight: 500, color: "var(--ink)" }}>
-            {row.age ?? "—"}
-          </p>
-          <p style={{ fontFamily: "var(--mono)", fontSize: "0.67rem", color: "var(--muted)", marginTop: "0.1rem" }}>
-            {row.dob
-              ? new Date(row.dob).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-              : "—"}
-          </p>
-        </div>
+        <span className="cell-mono" style={{ color: "var(--text-secondary)", fontSize: "0.78rem" }}>
+          {row.dob
+            ? new Date(row.dob).toLocaleDateString("en-IN", {
+                day: "2-digit", month: "short", year: "numeric",
+              })
+            : "—"}
+        </span>
       ),
     },
     {
       key: "gender",
       label: "Gender",
+      align: "center",
       render: (row) => (
-        <span style={{
-          fontSize: "0.78rem", fontWeight: 500, color: "var(--ink-soft)",
-          background: "rgba(15,25,35,0.04)",
-          border: "1px solid rgba(15,25,35,0.08)",
-          padding: "0.18rem 0.55rem", borderRadius: "0.35rem",
-        }}>
+        <span className={genderPill(row.gender)}>
           {row.gender || "—"}
         </span>
       ),
@@ -116,8 +115,9 @@ export default function CriminalsPage() {
     {
       key: "address",
       label: "Address",
+      align: "center",
       render: (row) => (
-        <span style={{ fontSize: "0.875rem", color: "var(--ink-soft)" }}>
+        <span style={{ fontSize: "0.86rem", color: "var(--text-secondary)" }}>
           {row.address || "—"}
         </span>
       ),
@@ -125,8 +125,9 @@ export default function CriminalsPage() {
     {
       key: "phone",
       label: "Phone",
+      align: "center",
       render: (row) => (
-        <span style={{ fontFamily: "var(--mono)", fontSize: "0.78rem", color: "var(--ink-faint)" }}>
+        <span className="cell-mono" style={{ color: "var(--text-muted)" }}>
           {row.phone || "—"}
         </span>
       ),
@@ -136,9 +137,10 @@ export default function CriminalsPage() {
           {
             key: "actions",
             label: "Actions",
+            align: "center",
             render: (row) => (
               <button
-                className="btn-danger btn-sm"
+                className="btn btn-danger btn-sm"
                 onClick={() => handleDelete(row.criminal_id)}
               >
                 Delete
@@ -150,80 +152,90 @@ export default function CriminalsPage() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
 
       {/* Search */}
-      <div style={{ position: "relative", maxWidth: "26rem" }}>
-        <svg
-          style={{
-            position: "absolute", left: "0.85rem", top: "50%",
-            transform: "translateY(-50%)", color: "var(--muted)",
-            width: 15, height: 15, pointerEvents: "none",
-          }}
-          viewBox="0 0 16 16" fill="none" aria-hidden="true"
-        >
-          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M10 10l3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-        <input
-          className="input"
-          style={{ paddingLeft: "2.4rem" }}
-          placeholder="Search by name or address…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div style={{
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap",
+      }}>
+        <div className="search-wrap">
+          <SearchIcon />
+          <input
+            className="input search-input"
+            placeholder="Search by name or address…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        {!loading && (
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: "0.62rem",
+            color: "var(--text-muted)", letterSpacing: "0.1em",
+          }}>
+            {filtered.length} / {criminals.length} records
+          </span>
+        )}
       </div>
 
       {/* Add criminal — admin only */}
       {isAdmin && (
-        <div className="panel section-form">
-          <span className="section-form-label">Add Criminal Record</span>
+        <div className="form-section">
+          <span className="form-section-eyebrow">Add Criminal Record</span>
           <form onSubmit={handleCreate}>
-            <div
-              style={{
-                display: "grid",
-                gap: "0.65rem",
-                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-              }}
-            >
-              <input
-                className="input"
-                placeholder="Full name"
-                value={form.name}
-                onChange={field("name")}
-                required
-              />
-              <input
-                className="input"
-                type="date"
-                placeholder="Date of birth"
-                value={form.dob}
-                onChange={field("dob")}
-                required
-              />
-              <select
-                className="input"
-                value={form.gender}
-                onChange={field("gender")}
-              >
-                <option value="">Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-              <input
-                className="input"
-                placeholder="Address"
-                value={form.address}
-                onChange={field("address")}
-              />
-              <input
-                className="input"
-                placeholder="Phone number"
-                value={form.phone}
-                onChange={field("phone")}
-              />
-              <button type="submit" className="btn-primary" style={{ whiteSpace: "nowrap", alignSelf: "end" }}>
+            <div style={{
+              display: "grid", gap: "0.65rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              alignItems: "end",
+            }}>
+              <div>
+                <label className="form-field-label">Full Name</label>
+                <input
+                  className="input"
+                  placeholder="Full name"
+                  value={form.name}
+                  onChange={setField("name")}
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-field-label">Date of Birth</label>
+                <input
+                  className="input"
+                  type="date"
+                  value={form.dob}
+                  onChange={setField("dob")}
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-field-label">Gender</label>
+                <select className="input" value={form.gender} onChange={setField("gender")}>
+                  <option value="">Select…</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="form-field-label">Address</label>
+                <input
+                  className="input"
+                  placeholder="City / District"
+                  value={form.address}
+                  onChange={setField("address")}
+                />
+              </div>
+              <div>
+                <label className="form-field-label">Phone</label>
+                <input
+                  className="input"
+                  placeholder="+91 9000000001"
+                  value={form.phone}
+                  onChange={setField("phone")}
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>
                 Add Record
               </button>
             </div>

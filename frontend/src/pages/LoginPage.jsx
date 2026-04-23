@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import api, { getApiErrorMessage } from "../services/api";
 import { setAuthSession } from "../services/auth";
 
@@ -11,11 +10,10 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState("");
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  async function handleSubmit(e) {
+    e.preventDefault();
     setSubmitting(true);
     setError("");
-
     try {
       const response = await api.post("/auth/login", formData);
       setAuthSession(response.data.token, response.data.user);
@@ -34,126 +32,124 @@ export default function LoginPage() {
 
   return (
     <div className="login-root">
-      <div className="login-grid">
 
-        {/* ── Dark info panel (desktop only) ── */}
-        <aside className="auth-sidebar">
-          <div className="sidebar-top">
-            <div className="sidebar-badge">
-              <span className="badge-dot" />
-              SYSTEM ACTIVE
+      {/* ── Left info panel ── */}
+      <aside className="login-panel">
+        <div>
+          <div className="login-badge">System Active</div>
+
+          <h1 className="login-panel-title">
+            Criminal<br />Record<br />Management
+          </h1>
+
+          <p className="login-panel-sub">
+            Unified case intelligence and officer management.
+            Restricted access — authorised personnel only.
+          </p>
+        </div>
+
+        <div className="login-stats">
+          {[
+            { val: "1,204", label: "Active Cases" },
+            { val: "348",   label: "Officers"     },
+            { val: "12",    label: "Divisions"     },
+          ].map((s) => (
+            <div key={s.label} className="login-stat">
+              <p className="login-stat-val">{s.val}</p>
+              <p className="login-stat-label">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="login-tags">
+          {["JWT Auth", "Node.js", "MySQL", "Render", "Railway"].map((t) => (
+            <span key={t} className="login-tag">{t}</span>
+          ))}
+        </div>
+      </aside>
+
+      {/* ── Right form side ── */}
+      <main className="login-form-side">
+        <div className="login-form-card">
+          <p className="login-form-eyebrow">State Police Dept.</p>
+          <h2 className="login-form-title">Sign in</h2>
+          <p className="login-form-sub">
+            Enter your department credentials to access the system.
+          </p>
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="field-group">
+              <label className="field-label" htmlFor="username">
+                Email address
+              </label>
+              <input
+                id="username"
+                type="email"
+                name="username"
+                className="input"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="officer@police.gov"
+                autoComplete="email"
+                required
+              />
             </div>
 
-            <p className="sidebar-dept">State Police Department</p>
+            <div className="field-group">
+              <label className="field-label" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                className="input"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                required
+              />
+            </div>
 
-            <h1 className="sidebar-heading">
-              Criminal<br />
-              Record<br />
-              Management
-            </h1>
-
-            <p className="sidebar-sub">
-              Unified case intelligence and officer management platform.
-              Restricted access for authorised personnel only.
-            </p>
-          </div>
-
-          <div className="sidebar-stats">
-            {[
-              { label: "Active Cases", value: "1,204" },
-              { label: "Officers",     value: "348"   },
-              { label: "Divisions",    value: "12"    },
-            ].map((s) => (
-              <div key={s.label} className="stat-card">
-                <span className="stat-value">{s.value}</span>
-                <span className="stat-label">{s.label}</span>
+            {error && (
+              <div className="login-error" role="alert">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none"
+                  stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <circle cx="8" cy="8" r="6.5" />
+                  <path d="M8 5v3.5M8 11h.01" strokeLinecap="round" />
+                </svg>
+                {error}
               </div>
-            ))}
-          </div>
+            )}
 
-          <div className="sidebar-footer">
-            {["JWT Auth", "Node.js", "MySQL", "Render"].map((t) => (
-              <span key={t} className="footer-tag">{t}</span>
-            ))}
-          </div>
-        </aside>
-
-        {/* ── Login form ── */}
-        <main className="auth-form-wrapper">
-          <div className="auth-form-card">
-            <p className="auth-mobile-dept lg:hidden">State Police Dept.</p>
-
-            <header className="auth-header">
-              <h2 className="auth-title">Sign in</h2>
-              <p className="auth-hint">
-                Enter your department credentials to access the system.
-              </p>
-            </header>
-
-            <form className="auth-form" onSubmit={handleSubmit} noValidate>
-              <div className="field-group">
-                <label className="field-label" htmlFor="username">
-                  Email address
-                </label>
-                <input
-                  id="username"
-                  type="email"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="field-input"
-                  placeholder="officer@police.gov"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-
-              <div className="field-group">
-                <label className="field-label" htmlFor="password">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="field-input"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-
-              {error && (
-                <div className="auth-error" role="alert">
-                  <span className="error-icon" aria-hidden="true">!</span>
-                  {error}
-                </div>
+            <button type="submit" disabled={submitting} className="login-btn">
+              {submitting ? (
+                <>
+                  <span className="spinner" aria-hidden="true" />
+                  Authenticating…
+                </>
+              ) : (
+                <>
+                  Access System
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M3 8h10M9 4l4 4-4 4" />
+                  </svg>
+                </>
               )}
+            </button>
+          </form>
 
-              <button type="submit" disabled={submitting} className="auth-btn">
-                {submitting ? (
-                  <span className="btn-inner">
-                    <span className="spinner" aria-hidden="true" />
-                    Authenticating…
-                  </span>
-                ) : (
-                  "Access System"
-                )}
-              </button>
-            </form>
-
-            <div className="auth-demo">
-              <span className="demo-label">Demo credentials</span>
-              <code className="demo-creds">
-                admin@system.com&nbsp;&nbsp;/&nbsp;&nbsp;admin123
-              </code>
-            </div>
+          <div className="login-demo">
+            <p className="login-demo-label">Demo credentials</p>
+            <code className="login-demo-creds">
+              admin@system.com &nbsp;/&nbsp; admin123
+            </code>
           </div>
-        </main>
+        </div>
+      </main>
 
-      </div>
     </div>
   );
 }

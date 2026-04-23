@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DataTable from "../components/DataTable";
 import api, { getApiErrorMessage } from "../services/api";
 
+function SearchIcon() {
+  return (
+    <svg className="search-icon" viewBox="0 0 16 16" fill="none"
+      stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <circle cx="6.5" cy="6.5" r="4.5" />
+      <path d="M10.5 10.5l3 3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function OfficersPage() {
+  const navigate = useNavigate();
   const [officers, setOfficers] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState("");
@@ -10,6 +22,13 @@ export default function OfficersPage() {
 
   const user    = JSON.parse(localStorage.getItem("user") || "null");
   const isAdmin = user?.role === "admin";
+
+  // ── Route guard: non-admins cannot access this page ───────
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate("/cases", { replace: true });
+    }
+  }, [isAdmin, navigate]);
 
   const [form, setForm] = useState({
     name: "", officer_rank: "", phone: "", email: "", station: "",
@@ -34,7 +53,7 @@ export default function OfficersPage() {
     (o.station || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  function field(key) {
+  function setField(key) {
     return (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
@@ -53,7 +72,7 @@ export default function OfficersPage() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Delete this officer? This will also remove their login access.")) return;
+    if (!window.confirm("Delete this officer? Their login access will also be removed.")) return;
     try {
       await api.delete(`/officers/${id}`);
       setOfficers((prev) => prev.filter((o) => o.officer_id !== id));
@@ -66,45 +85,29 @@ export default function OfficersPage() {
     {
       key: "officer_id",
       label: "ID",
-      render: (row) => (
-        <span style={{
-          fontFamily: "var(--mono)", fontSize: "0.72rem", fontWeight: 500,
-          color: "var(--ink)", background: "rgba(15,25,35,0.05)",
-          border: "1px solid rgba(15,25,35,0.09)",
-          padding: "0.18rem 0.5rem", borderRadius: "0.35rem",
-        }}>
-          #{row.officer_id}
-        </span>
-      ),
+      align: "center",
+      render: (row) => <span className="cell-id">#{row.officer_id}</span>,
     },
     {
       key: "name",
       label: "Name",
-      render: (row) => (
-        <span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.875rem" }}>
-          {row.name}
-        </span>
-      ),
+      align: "left",
+      render: (row) => <span className="cell-primary">{row.name}</span>,
     },
     {
       key: "officer_rank",
       label: "Rank",
+      align: "center",
       render: (row) => (
-        <span style={{
-          fontSize: "0.78rem", fontWeight: 500, color: "var(--ink-soft)",
-          background: "rgba(15,25,35,0.04)",
-          border: "1px solid rgba(15,25,35,0.08)",
-          padding: "0.18rem 0.55rem", borderRadius: "0.35rem",
-        }}>
-          {row.officer_rank}
-        </span>
+        <span className="pill pill-blue">{row.officer_rank}</span>
       ),
     },
     {
       key: "station",
       label: "Station",
+      align: "center",
       render: (row) => (
-        <span style={{ fontSize: "0.875rem", color: "var(--ink-soft)" }}>
+        <span style={{ fontSize: "0.86rem", color: "var(--text-secondary)" }}>
           {row.station}
         </span>
       ),
@@ -112,8 +115,9 @@ export default function OfficersPage() {
     {
       key: "phone",
       label: "Phone",
+      align: "center",
       render: (row) => (
-        <span style={{ fontFamily: "var(--mono)", fontSize: "0.78rem", color: "var(--ink-faint)" }}>
+        <span className="cell-mono" style={{ color: "var(--text-muted)" }}>
           {row.phone}
         </span>
       ),
@@ -121,8 +125,9 @@ export default function OfficersPage() {
     {
       key: "email",
       label: "Email",
+      align: "center",
       render: (row) => (
-        <span style={{ fontFamily: "var(--mono)", fontSize: "0.75rem", color: "var(--ink-faint)" }}>
+        <span className="cell-mono" style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>
           {row.email}
         </span>
       ),
@@ -130,10 +135,11 @@ export default function OfficersPage() {
     {
       key: "actions",
       label: "Actions",
+      align: "center",
       render: (row) =>
         isAdmin ? (
           <button
-            className="btn-danger btn-sm"
+            className="btn btn-danger btn-sm"
             onClick={() => handleDelete(row.officer_id)}
           >
             Delete
@@ -142,78 +148,66 @@ export default function OfficersPage() {
     },
   ];
 
+  // Don't render anything while redirecting non-admins
+  if (!isAdmin) return null;
+
   return (
-    <div className="space-y-5">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
 
       {/* Search */}
-      <div style={{ position: "relative", maxWidth: "26rem" }}>
-        <svg
-          style={{
-            position: "absolute", left: "0.85rem", top: "50%",
-            transform: "translateY(-50%)", color: "var(--muted)",
-            width: 15, height: 15, pointerEvents: "none",
-          }}
-          viewBox="0 0 16 16" fill="none" aria-hidden="true"
-        >
-          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M10 10l3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-        <input
-          className="input"
-          style={{ paddingLeft: "2.4rem" }}
-          placeholder="Search by name or station…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div style={{
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap",
+      }}>
+        <div className="search-wrap">
+          <SearchIcon />
+          <input
+            className="input search-input"
+            placeholder="Search by name or station…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        {!loading && (
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: "0.62rem",
+            color: "var(--text-muted)", letterSpacing: "0.1em",
+          }}>
+            {filteredOfficers.length} / {officers.length} officers
+          </span>
+        )}
       </div>
 
       {/* Add officer form — admin only */}
       {isAdmin && (
-        <div className="panel section-form">
-          <span className="section-form-label">Add New Officer</span>
+        <div className="form-section">
+          <span className="form-section-eyebrow">Add New Officer</span>
           <form onSubmit={handleCreate}>
-            <div
-              style={{
-                display: "grid",
-                gap: "0.65rem",
-                gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              }}
-            >
-              <input
-                className="input"
-                placeholder="Full name"
-                value={form.name}
-                onChange={field("name")}
-                required
-              />
-              <input
-                className="input"
-                placeholder="Rank (e.g. Inspector)"
-                value={form.officer_rank}
-                onChange={field("officer_rank")}
-                required
-              />
-              <input
-                className="input"
-                placeholder="Phone number"
-                value={form.phone}
-                onChange={field("phone")}
-              />
-              <input
-                className="input"
-                type="email"
-                placeholder="Email address"
-                value={form.email}
-                onChange={field("email")}
-                required
-              />
-              <input
-                className="input"
-                placeholder="Station / Division"
-                value={form.station}
-                onChange={field("station")}
-              />
-              <button type="submit" className="btn-primary" style={{ whiteSpace: "nowrap", alignSelf: "end" }}>
+            <div style={{
+              display: "grid", gap: "0.65rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              alignItems: "end",
+            }}>
+              {[
+                { key: "name",         label: "Full Name",  placeholder: "Inspector Ravi"       },
+                { key: "officer_rank", label: "Rank",       placeholder: "Inspector"             },
+                { key: "phone",        label: "Phone",      placeholder: "+91 9000000001"        },
+                { key: "email",        label: "Email",      placeholder: "officer@police.in"     },
+                { key: "station",      label: "Station",    placeholder: "Delhi Central"         },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className="form-field-label">{label}</label>
+                  <input
+                    className="input"
+                    placeholder={placeholder}
+                    value={form[key]}
+                    onChange={setField(key)}
+                    type={key === "email" ? "email" : "text"}
+                    required={["name", "email", "officer_rank"].includes(key)}
+                  />
+                </div>
+              ))}
+              <button type="submit" className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>
                 Add Officer
               </button>
             </div>
@@ -221,10 +215,10 @@ export default function OfficersPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Officers table */}
       <DataTable
         title="Officer Records"
-        description="Active officers with station assignments and login access."
+        description="Active officers with station assignments and system login access."
         columns={columns}
         data={filteredOfficers}
         loading={loading}

@@ -4,7 +4,7 @@ import { clearAuthSession } from "../services/auth";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
-const pageTitles = {
+const PAGE_TITLES = {
   "/":          "Dashboard",
   "/cases":     "Cases",
   "/officers":  "Officers",
@@ -16,8 +16,8 @@ export default function AppLayout() {
   const navigate  = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-  const currentTitle = pageTitles[location.pathname] || "Dashboard";
+  const user         = JSON.parse(localStorage.getItem("user") || "null");
+  const currentTitle = PAGE_TITLES[location.pathname] ?? "Dashboard";
 
   function handleLogout() {
     clearAuthSession();
@@ -25,10 +25,13 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen md:flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="app-shell">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-      <div className="flex min-h-screen flex-1 flex-col px-4 py-4 sm:px-6 lg:px-7">
+      <div className="main-content">
         <TopBar
           title={currentTitle}
           user={user}
@@ -36,9 +39,9 @@ export default function AppLayout() {
           onLogout={handleLogout}
         />
 
-        <main className="flex-1 pb-10">
+        <div className="page-body">
           <Outlet />
-        </main>
+        </div>
       </div>
     </div>
   );
