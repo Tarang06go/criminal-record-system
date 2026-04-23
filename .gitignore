@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # dependencies
 node_modules/
 frontend/node_modules/
@@ -11,3 +12,10 @@ build/
 
 # logs
 npm-debug.log*
+=======
+node_modules/
+.env
+dist/
+build/
+>>>>>>> 118b5c1ca72606bc5609b04db1922badd61570d6
+node_modules/
